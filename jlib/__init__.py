@@ -839,15 +839,10 @@ def splitpath(x):
 	"""
 	a, b = os.path.split(x)
 	out = []
-	if a == '':
-		return [b]
-	while a != '' and b != '':
+	while a != '':
 		out.append(b)
 		a, b = os.path.split(a)
-	if b != '':
-		out.append(b)
-	if a != '':
-		out.append(a)
+	out.append(b)
 	out.reverse()
 	return out
 
