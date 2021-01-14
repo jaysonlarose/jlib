@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -52,7 +52,12 @@ class JException(Exception):
 # STRING STUFF{{{
 
 def is_ascii(value):
+	# TODO: some time in the indefinite future, áfter I've excised all of my
+	# legacy code using this thing, rework it to operate natively on bytes
+	# instead of converting bytes to str.
 	"""Returns True or False depending on whether or not the supplied string consists entirely of ASCII characters (ie, values between 0x20-0x73, or (0x09, 0x0A, 0x0D))"""
+	if isinstance(value, bytes):
+		value = value.decode()
 	return not bool(len(list(filter(lambda x: (x < 0x20 or x > 0x7e) and x not in (9, 10, 13), map(lambda x: ord(x), value)))))
 
 def chomp(s):
