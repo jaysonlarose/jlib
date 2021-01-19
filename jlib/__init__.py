@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -217,10 +217,12 @@ def bytelen_to_humanreadable(val, binary=True, min_magnitude=0, max_magnitude=8,
 	if max_magnitude > len(suffixes) - 1:
 		max_magnitude = len(suffiexes) - 1
 
-	suffixpos = min_magnitude 
+	if min_magnitude < 0 or min_magnitude > max_magnitude:
+		raise ValueError
+	suffixpos = 0
 
 	newval = val
-	while newval >= magnitude_base and suffixpos < max_magnitude:
+	while suffixpos < min_magnitude or (newval >= magnitude_base and suffixpos < max_magnitude):
 		newval /= magnitude_base
 		suffixpos += 1
 	if suffixpos == 0:
