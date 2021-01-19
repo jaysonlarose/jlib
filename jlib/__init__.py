@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -169,22 +169,65 @@ def ansiwcsrjust(text, width, fillchar=' '):
 	return (fillchar * pad) + text
 # NUMBER STUFF{{{
 
-def bytelen_to_humanreadable(val):# {{{
+def bytelen_to_humanreadable(val, binary=True, min_magnitude=0, max_magnitude=8, separator=''):# {{{
 	"""
 	Turns a number, like 1457664, into something a little more
 	human-parsable, like "1.39MiB".
+
+	keyword arguments
+
+	binary (True):
+		Use binary magnitude units (1 mebibyte = 1024 * 1024 bytes) if True.
+		Use decimal magnitude units (1 megabyte = 1000 * 1000 bytes) if False.
+
+	min_magnitude (0), max_magnitude (8):
+		These arguments control the lower and upper bounds of unit magnitude.
+
+		| Idx | Binary         | Decimal        |
+		| --- | -------------- | -------------- |
+		| 0   | byte (B)       | byte (B)       |
+		| 1   | kibibyte (KiB) | kilobyte (kB)  |
+		| 2   | mebibyte (MiB) | megabyte (MB)  |
+		| 3   | gibibyte (GiB) | gigabyte (GB)  |
+		| 4   | tebibyte (TiB) | terabyte (TB)  |
+		| 5   | pebibyte (PiB) | petabyte (PB)  |
+		| 6   | exibyte (EiB)  | exabyte (EB)   |
+		| 7   | zebibyte (ZiB) | zettabyte (ZB) |
+		| 8   | yobibyte (YiB) | yottabyte (YB) |
+
+		Unless constrained, the smallest unit magnitude that returns a quantity
+		greater than 1.0 will be used.
+		
+		So, for example, bytelen_to_humanreadable(max_magnitude=0) will return
+		"9,0001B" instead of "8.79KiB".
+	
+	separator (''):
+		This string is inserted betwen the numeric value and the unit magnitude.
+
 	"""
-	suffixes = ['B	', 'KiB', 'MiB', 'GiB', 'TiB']
-	suffixpos = 0
+	binary_suffixes =  ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+	decimal_suffixes = ['B',  'kB',  'MB',  'GB',  'TB',  'PB',  'EB',  'ZB',  'YB']
+	if binary:
+		magnitude_base = 1024
+		suffixes = binary_suffixes
+	else:
+		magnitude_base = 1000
+		suffixes = decimal_suffixes
+
+	if max_magnitude > len(suffixes) - 1:
+		max_magnitude = len(suffiexes) - 1
+
+	suffixpos = min_magnitude 
+
 	newval = val
-	while newval >= 1024 and suffixpos < len(suffixes) - 1:
-		newval /= 1024
+	while newval >= magnitude_base and suffixpos < max_magnitude:
+		newval /= magnitude_base
 		suffixpos += 1
 	if suffixpos == 0:
 		valfmt = "{}"
 	else:
 		valfmt = "{:.2f}"
-	return (valfmt + "{}").format(newval, suffixes[suffixpos])
+	return valfmt.format(newval) + separator + suffixes[suffixpos]
 # }}}
 
 def resize_aspect(orig_width, orig_height, width=None, height=None, factor=None): # {{{
