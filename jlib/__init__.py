@@ -500,6 +500,17 @@ def any_tz(name):
 	return pytz.timezone(_TZLOOKUP[name])
 
 def timedelta_to_DHMS(dur, weeks=True, precision=0):
+	"""
+	Given a timedelta object, outputs a string representing said duration.
+	For example: 
+
+
+	>>> print(jlib.timedelta_to_DHMS(datetime.timedelta(days=5, hours=2, minutes=25)))
+	5d 02h 25m 00s
+
+	>>> print(jlib.timedelta_to_DHMS(datetime.timedelta(days=5, hours=2, minutes=25, microseconds=123), precision=4))
+	5d 02h 25m 00.0001s
+	"""
 	ts = abs(dur.total_seconds())
 	micros = int(ts * int(1e6)) - (int(ts) * int(1e6))
 	secs = int(ts)
@@ -536,6 +547,41 @@ def timedelta_to_DHMS(dur, weeks=True, precision=0):
 		strout += '.' + str(micros).rjust(6, '0')[:precision]
 	strout += 's'
 	return strout
+
+
+def DHMS_to_timedelta(dhms):
+	# Lifted and adapted from https://gist.github.com/Ayehavgunne/ac6108fa8740c325892b
+	import datetime
+	dhms = dhms.lower()
+	prev_num = []
+	timedelta_kwargs = {}
+	for character in dhms:
+		if character.isalpha():
+			if prev_num:
+				num_str = ''.join(prev_num)
+				if '.' in num_str:
+					num = float(num_str)
+				else:
+					num = int(num_str)
+				if character == 'w':
+					key = 'weeks'
+				elif character == 'd':
+					key = 'days'
+				elif character == 'h':
+					key = 'hours'
+				elif character == 'm':
+					key = 'minutes'
+				elif character == 's':
+					key = 'seconds'
+				else:
+					raise ValueError("Unknown DHMS predicate: {}".format(character))
+				timedelta_kwargs[key] = num
+				prev_num = []
+		elif character.isnumeric() or character == '.':
+			prev_num.append(character)
+	if prev_num:
+		raise ValueError("Dangling quantity: {}".format(''.join(prev_num)))
+	return datetime.timedelta(**timedelta_kwargs)
 
 def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):
 	"""\
