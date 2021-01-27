@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -1161,6 +1161,63 @@ def iter_file_or_dir(file_or_dir):
 				yield os.path.join(root, f)
 	else:
 		yield file_or_dir
+
+
+class FakeDirEntry:
+	"""
+	Since os.DirEntry doesn't allow us to use it, and I've got code that
+	expects that it's working on os.DirEntry objects, I've had to roll
+	my own.
+
+	arguments:
+
+	basedir — The base directory for this FakeDirEntry. Use "." if you're
+			  describing an element in the current directory.
+	name — the name of the file, directory, symlink, whatever.
+	is_file — set True if you already know it's a file, False if you know
+			  it's not, or leave it None and it'll get looked up the first
+			  time the user runs the `is_file()` method.
+	is_dir — same as is_file, but for directories.
+	is_symlink — same as is_file, but for symlinks.
+	inode — set this to the element's inode if you know it, else leave it
+			None and it'll get looked up the first time the user runs
+			the inode() method.
+	
+	As for how it works post-instantiation, just go look at the documentation
+	for `os.DirEntry`.
+	"""
+	__slots__ = ['basedir', 'name', '_is_file', '_is_dir', '_is_symlink', '_inode']
+	def __init__(self, basedir, name, is_file=None, is_dir=None, is_symlink=None, inode=None):
+		self.basedir = basedir
+		self.name = name
+		self._is_file = is_file
+		self._is_dir = is_dir
+		self._is_symlink = is_symlink
+		self._inode = inode
+	@property # path
+	def path(self):
+		return os.path.join(self.basedir, self.name)
+	def stat(self, follow_symlinks=True):
+		return os.stat(self.path, follow_symlinks=follow_symlinks)
+	def inode(self):
+		if self._inode is None:
+			self._inode = self.stat(follow_symlinks=False).st_ino
+		return self._inode
+	def is_file(self):
+		if self._is_file is None:
+			import stat
+			self._is_file = stat.S_ISREG(self.stat(follow_symlinks=True).st_mode)
+		return self._is_file
+	def is_dir(self):
+		if self._is_dir is None:
+			import stat
+			self._is_dir = stat.S_ISDIR(self.stat(follow_symlinks=True).st_mode)
+		return self._is_dir
+	def is_symlink(self):
+		if self._is_symlink is None:
+			import stat
+			self._is_symlink = stat.S_ISLNK(self.stat(follow_symlinks=False).st_mode)
+		return self._is_symlink
 # }}}
 
 # HACKS
