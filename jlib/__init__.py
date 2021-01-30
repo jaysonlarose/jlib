@@ -10,13 +10,20 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
 svg_exts = set(['.svg'])
 compressed_exts = set('.gz .z .bz2 .xz'.split())
 html_exts = set('.html .htm'.split())
+ext_types = {
+	'image': image_exts,
+	'video': video_exts,
+	'svg':   svg_exts,
+	'html':  html_exts,
+	'compressed': compressed_exts,
+}
 
 class JException(Exception):
 	"""
