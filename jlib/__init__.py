@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.8"
+__version__ = "1.0.9"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -953,8 +953,13 @@ def splitpath(x):
 
 def splitexts(x):
 	"""
-	A version of `os.path.splitext` that keeps on splitting until the splitting's done.
-	Returns a list.
+	A version of `os.path.splitext` that keeps on splitting until
+	the splitting's done. It will return a list of all of the resultant
+	filename fragments.
+
+	>>> jlib.splitexts("/home/jayson/woof.tar.gz")
+	['/home/jayson/woof', '.tar', '.gz']
+
 	"""
 	ret = collections.deque()
 	base = x
@@ -966,15 +971,28 @@ def splitexts(x):
 	return list(ret)
 
 
-def find_mountpoint(fn):
-	base = os.path.abspath(fn)
+def find_mountpoint(path, ascend_mountpoint=False):
+	"""
+	Finds the root directory for the filesystem that <path> belongs to.
+	In other words, `find_mountpoint("/dev/null")` will return `'/dev'`.
+
+	Note that calling find_mountpoint on a mountpoint will return that same
+	mountpoint. (ie, `find_mountpoint("/dev")` will return `'/dev'`).
+	Setting the `ascend_mountpoint` parameter to True will incite this
+	function to return the mountpoint's mountpoint, instead.
+
+	"""
+	base = os.path.abspath(path)
+	if ascend_mountpoint and os.path.ismount(base):
+		base, spoke = os.path.split(base)
 	while not os.path.ismount(base):
 		base, spoke = os.path.split(base)
 	return base
 
 def find_path_ascending(f, startdir, enddir='/', multiple=False, iter_limit=256):
 	"""
-	Searches for file/dir f, starting in startdir.
+	Searches for file/dir `f`, starting in `startdir`.
+
 	If it isn't found there, startdir's parent dir will be checked,
 	then that parent's parent, and so on, until either a match is found,
 	enddir is encountered, or iter_limit attempts have been made.
@@ -982,11 +1000,12 @@ def find_path_ascending(f, startdir, enddir='/', multiple=False, iter_limit=256)
 	If a match is found, its absolute pathname is returned, otherwise
 	you get None, son!
 
-	setting multiple to True changes the behavior of this function:
+	Setting `multiple` to True changes the behavior of this function:
 	instead of a single path or None value, a list will be returned
-	containing every occurrence of file/dir f from startdir up to
-	enddir, in order of occurrence.
-	If none are found, you will of coures be handed an empty list.
+	containing every occurrence of file/dir `f` from `startdir` up to
+	`enddir`, in order of occurrence.  If none are found, you will of
+	course be handed an empty list.
+
 	"""
 	startdir = os.path.abspath(startdir)
 	enddir = os.path.abspath(enddir)
@@ -1075,11 +1094,19 @@ class KeywordSearchPath(UnixSearchPath):# {{{
 # }}}
 
 def get_syspath():
-	"""Sugar function to retrieve and split out the system PATH"""
+	"""
+	Sugar function to retrieve and split out the system PATH
+
+	"""
 	return UnixSearchPath.from_string(os.environ['PATH'])
 
 def locate_binary(bin_name, altpath=None):
-	"""Iterates through the system PATH for the supplied binary name, returning the absolute path to the first occurrence found, or None if it's not located."""
+	"""
+	Iterates through the system PATH for the supplied binary name,
+	returning the absolute path to the first occurrence found,
+	or None if it's not located.
+
+	"""
 	if altpath is not None:
 		pathiterator = altpath
 	else:
@@ -1090,14 +1117,23 @@ def locate_binary(bin_name, altpath=None):
 	raise FileNotFoundError(bin_name)
 
 def search_binary(pat, altpath=None):
-	"""Applies a match filter against each of the (+x) binaries in the system path, returning the absolute path of each match.
+	"""Applies a match filter against each of the (+x) binaries in the
+	system path, returning the absolute path of each match.
 
-	 The match filter is only applied to the filename portion of each binary, so a search for r'^ld' will, for example, return '/sbin/ldconfig' and '/usr/bin/ld', among others.
+	 The match filter is only applied to the filename portion of each binary,
+	 so a search for r'^ld' will, for example, return '/sbin/ldconfig' and
+	 '/usr/bin/ld', among others.
 
-	No checks are performed to ensure sanity of the results, so if you're being extra cautious, you may want to ask some questions of each returned result, such as:
+	No checks are performed to ensure sanity of the results, so if you're
+	being extra cautious, you may want to ask some questions of each
+	returned result, such as:
+
 	* Are you set executable?
 	* Are you set executable FOR ME?
-	* Are you something I can actually execute (a file (or a valid symlink that eventually resolves to a file, and not something silly like a directory or FIFO)?
+	* Are you something I can actually execute (a file (or a valid symlink
+	  that eventually resolves to a file, and not something silly like
+	  a directory or FIFO)?
+
 	"""
 	import re
 	if altpath is not None:
@@ -1118,14 +1154,18 @@ def search_binary(pat, altpath=None):
 	
 def splitext_compressed(fn):
 	"""
-	Works like `os.path.splitext`, except in the case of compressed files,
+	Works like `os.path.splitext()`, except in the case of compressed files,
 	specifically the ones where it's convention to tack an extra extension
-	on the end denoting the compression type. Think: `file.txt.gz`.
+	on the end denoting the compression type.
+
+	Think: `'file.txt.gz'`.
+
 	This function will include any compressed extensions as well, so
-	supplying `file.txt.gz` will return ('file', '.txt.gz'),
-	`file.txt.gz.bz2` will return ('file', '.txt.gz.bz2'),
-	`file.gz` will return ('file', '.gz') and `file.txt.md5sum.bz2`
-	will return ('file.txt', '.md5sum.bz2').
+	supplying `'file.txt.gz'` will return `('file', '.txt.gz')`,
+	`'file.txt.gz.bz2'` will return `('file', '.txt.gz.bz2')`,
+	`'file.gz'` will return `('file', '.gz')` and `'file.txt.md5sum.bz2'`
+	will return `('file.txt', '.md5sum.bz2')`.
+
 	"""
 	fileext = ''
 	fileroot, ext = os.path.splitext(fn)
@@ -1158,16 +1198,32 @@ class IterWalk(object):# {{{
 					yield x
 # }}}
 
-def iter_file_or_dir(file_or_dir):
-	import natsort
-	if os.path.isdir(file_or_dir):
-		for root, dirs, files in os.walk(file_or_dir):
+def iter_file_or_dir(path, followlinks=False):
+	"""
+	Returns a generator which will yield different results depending on
+	the nature of the path supplied.
+
+	In the case of a directory, it will yield all of the files contained
+	within that directory, recursively. As with `os.walk()`, symlinks
+	will not be traversed unless `followlinks` is True. Files are returned
+	in "natural sort" order (see `natsort.py`), because I like that.
+
+	In the case of anything that isn't a directory, it will just yield
+	that filesystem element's path.
+
+	If you supply this function with a path that doesn't exist, it won't
+	yield anything.
+
+	"""
+	from . import natsort
+	if os.path.isdir(path):
+		for root, dirs, files in os.walk(path, followlinks=followlinks):
 			dirs.sort(key=natsort.nocase)
 			files.sort(key=natsort.nocase)
 			for f in files:
 				yield os.path.join(root, f)
-	else:
-		yield file_or_dir
+	elif os.path.exists(path):
+		yield path
 
 
 class FakeDirEntry:
@@ -1192,6 +1248,7 @@ class FakeDirEntry:
 	
 	As for how it works post-instantiation, just go look at the documentation
 	for `os.DirEntry`.
+
 	"""
 	__slots__ = ['basedir', 'name', '_is_file', '_is_dir', '_is_symlink', '_inode']
 	def __init__(self, basedir, name, is_file=None, is_dir=None, is_symlink=None, inode=None):
