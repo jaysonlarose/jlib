@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.9"
+__version__ = "1.0.10"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob'.split())
@@ -75,7 +75,8 @@ def lstripn(text, count, chars=None):
 	"""
 	Strip up to `count` leading characters of whitespace from a string.
 
-	As with the builtin `str.lstrip()` method, if `chars` is specified, these characters will be stripped instead.
+	As with the builtin `str.lstrip()` method, if `chars` is specified,
+	those characters will be stripped instead.
 	"""
 	if chars is None:
 		import string
@@ -93,7 +94,8 @@ def rstripn(text, count, chars=None):
 	"""
 	Strip up to `count` trailing characters of whitespace from a string.
 
-	As with the builtin `str.lstrip()` method, if `chars` is specified, these characters will be stripped instead.
+	As with the builtin `str.lstrip()` method, if `chars` is specified,
+	those characters will be stripped instead.
 	"""
 	if chars is None:
 		import string
@@ -109,10 +111,12 @@ def rstripn(text, count, chars=None):
 
 def stripn(text, count, chars=None):
 	"""
-	Strip up to `count` leading and trailing characters of whitespace from a string.
+	Strip up to `count` leading and trailing characters of whitespace
+	from a string.
 
-	It doesn't really make much sense to use this function, but it was written for completeness' sake.
-	In reality, it's just calling `lstripn()` followed by `rstripn()`.
+	It doesn't really make much sense to use this function, but
+	it was written for completeness' sake. In reality, it's just
+	calling `lstripn()` followed by `rstripn()`.
 	"""
 	text = lstripn(text, count, chars=chars)
 	text = rstripn(text, count, chars=chars)
@@ -435,6 +439,13 @@ def get_fabulous(force=False):
 		#for funcattr in 'bold underline underline2 blink italic'.split():
 		#	baa = getattr(fabulous.color, funcattr)
 		#	ret[funcattr] = lambda x: baa(x)
+
+		# TODO: in future, try:
+		#for funcattr in 'bold underline underline2 blink italic'.split():
+		#	baa = getattr(fabulous.color, funcattr)
+		#	ret[funcattr] = lambda x=x: baa(x)
+
+
 		
 		# OHH THIS PISSED ME OFF SO MUCH
 		def lambdas_arent_working_so_fuck_you_python(fuckyou, *soverymuch, **goddamnyou):
@@ -499,7 +510,7 @@ def stripAnsi(s):
 
 _TZLOOKUP = {}
 
-def any_tz(name):
+def any_tz(name):# {{{
 	import pytz, datetime
 	global _TZLOOKUP
 	if len(_TZLOOKUP) == 0:
@@ -507,6 +518,7 @@ def any_tz(name):
 	return pytz.timezone(_TZLOOKUP[name])
 
 def timedelta_to_DHMS(dur, weeks=True, precision=0):
+	# doc{{{
 	"""
 	Given a timedelta object, outputs a string representing said duration.
 	For example: 
@@ -518,6 +530,7 @@ def timedelta_to_DHMS(dur, weeks=True, precision=0):
 	>>> print(jlib.timedelta_to_DHMS(datetime.timedelta(days=5, hours=2, minutes=25, microseconds=123), precision=4))
 	5d 02h 25m 00.0001s
 	"""
+	# }}}
 	ts = abs(dur.total_seconds())
 	micros = int(ts * int(1e6)) - (int(ts) * int(1e6))
 	secs = int(ts)
@@ -554,9 +567,8 @@ def timedelta_to_DHMS(dur, weeks=True, precision=0):
 		strout += '.' + str(micros).rjust(6, '0')[:precision]
 	strout += 's'
 	return strout
-
-
-def DHMS_to_timedelta(dhms):
+# }}}
+def DHMS_to_timedelta(dhms):# {{{
 	# Lifted and adapted from https://gist.github.com/Ayehavgunne/ac6108fa8740c325892b
 	import datetime
 	dhms = dhms.lower()
@@ -589,21 +601,23 @@ def DHMS_to_timedelta(dhms):
 	if prev_num:
 		raise ValueError("Dangling quantity: {}".format(''.join(prev_num)))
 	return datetime.timedelta(**timedelta_kwargs)
-
-def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):
+# }}}
+def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
+	# doc{{{
 	"""\
-Takes a timezone-aware datetime object and makes it look like:
+	Takes a timezone-aware datetime object and makes it look like:
 
-2019-01-21 14:38:21.123456 PST
+	2019-01-21 14:38:21.123456 PST
 
-Or, if you call it with omit_tz=True:
+	Or, if you call it with omit_tz=True:
 
-2019-01-21 14:38:21.123456
+	2019-01-21 14:38:21.123456
 
-The precision parameter controls how many digits past the decimal point you
-get. 6 gives you all the microseconds, 0 avoids the decimal point altogether
-and you just get whole seconds.
+	The precision parameter controls how many digits past the decimal point you
+	get. 6 gives you all the microseconds, 0 avoids the decimal point altogether
+	and you just get whole seconds.
 	"""
+	# }}}
 	tz_format = "%Z"
 	if alt_tz:
 		tz_format = "%z"
@@ -613,13 +627,15 @@ and you just get whole seconds.
 	if not omit_tz and dt.tzinfo is not None:
 		timestamp_txt = "{} {}".format(timestamp_txt, dt.strftime("%z"))
 	return timestamp_txt
-
-def datetime_to_timestamp(dt):
+# }}}
+def datetime_to_timestamp(dt):# {{{
+	# doc{{{
 	"""
 	Turns a timezone-aware datetime object into a standard UTC-seconds-since-epoch timestamp.
 
 	If the datetime object passed to this function has no timezone information, it is treated as UTC.
 	"""
+	# }}}
 	from pytz.reference import LocalTimezone, UTC
 	import time
 	if dt.tzinfo is None:
@@ -629,8 +645,9 @@ def datetime_to_timestamp(dt):
 	if dt.microsecond > 0:
 		ctime += (float(dt.microsecond) / int(1e6))
 	return ctime
-
-def parse_decimal_timestamp(ts):
+# }}}
+def parse_decimal_timestamp(ts):# {{{
+	# doc{{{
 	"""
 	Turns a fractional timestamp (1559053068.263864) provided as a string
 	into a datetime object. This datetime object will be timezone-aware,
@@ -647,6 +664,7 @@ def parse_decimal_timestamp(ts):
 	>>> datetime.datetime.fromtimestamp(ts, tz=pytz.reference.Local)
 	datetime.datetime(2019, 9, 23, 23, 27, 49, 439778, tzinfo=<pytz.reference.LocalTimezone object at 0x7ff525c83208>)
 	"""
+	# }}}
 	import pytz.reference, datetime
 	frags = ts.split('.', 1)
 	dt = datetime.datetime.fromtimestamp(int(frags[0]), tz=pytz.reference.Local)
@@ -655,23 +673,47 @@ def parse_decimal_timestamp(ts):
 		# greater-than-microsecond precision!
 		dt = dt.replace(microsecond=int(frags[1][:6]))
 	return dt
-
-
-def utcnow_tzaware():
+# }}}
+def utcnow_tzaware():# {{{
+	# doc{{{
 	"""
 	Convenience function, equivalent to 
 	`datetime.datetime.utcnow().replace(tzinfo=pytz.reference.UTC)`
 	"""
+	# }}}
 	import pytz.reference, datetime
 	return datetime.datetime.utcnow().replace(tzinfo=pytz.reference.UTC)
-
-def now_tzaware():
+# }}}
+def now_tzaware():# {{{
+	# doc{{{
 	"""
 	Convenience function, equivalent to 
 	`datetime.datetime.now(tz=pytz.reference.Local)`
 	"""
+	# }}}
 	import pytz.reference, datetime
 	return datetime.datetime.now(tz=pytz.reference.Local)
+# }}}
+def timestamp_to_utcdatetime(ts):# {{{
+	# doc{{{
+	"""
+	Like `datetime.datetime.utcfromtimestamp()`, except it returns a
+	timezone-aware datetime object.
+	"""
+	# }}}
+	import pytz.reference, datetime
+	return datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=pytz.reference.UTC)
+# }}}
+def timestamp_to_localdatetime(ts):# {{{
+	# doc{{{
+	"""
+	Like `datetime.datetime.fromtimestamp()`, except it returns a
+	timezone-aware datetime object.
+	"""
+	# }}}
+	import pytz.reference, datetime
+	return datetime.datetime.fromtimestamp(ts).replace(tzinfo=pytz.reference.Local)
+# }}}
 # }}}
 # ARRAY MAKING AND BREAKING{{{
 
