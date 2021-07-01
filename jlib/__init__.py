@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.15"
+__version__ = "1.0.16"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts'.split())
@@ -447,17 +447,31 @@ def get_fabulous(force=False, autostr=True):
 
 
 		
-		# OHH THIS PISSED ME OFF SO MUCH
 		if autostr:
+			# OHH THIS PISSED ME OFF SO MUCH
+			# And the funny part is, it's not the way I want to do things going forward.
+			# Blindly applying `.as_utf8.decode()` to `fabulous.color.ColorString`s
+			# destroys the provisions that its designers added for doing things like
+			# getting the correct string length.
 			def lambdas_arent_working_so_fuck_you_python(fuckyou, *soverymuch, **goddamnyou):
 				return getattr(fabulous.color, fuckyou)(*soverymuch, **goddamnyou).as_utf8.decode()
+			for attr in fabulous_attrs:
+				if hasattr(fabulous.color, attr):
+					ret[attr] = functools.partial(lambdas_arent_working_so_fuck_you_python, attr)
 		else:
-			def lambdas_arent_working_so_fuck_you_python(fuckyou, *soverymuch, **goddamnyou):
-				return getattr(fabulous.color, fuckyou)(*soverymuch, **goddamnyou)
+			for attr in fabulous_attrs:
+				if hasattr(fabulous.color, attr):
+					ret[attr] = getattr(fabulous.color, attr)
+			# If autostr is set false, we throw in a bonus attribute — `cstr` — for absolutely
+			# free. This is just `fabulous.color.ColorString`, but this makes your life easier
+			# when you want to do things like this:
+			#
+			# l = [fgtrue("green", "napster good"), fgtrue("red", "fire bad")]
+			# print(cstr(" ").join(l))
+			#
+			# Though, you could always just use `plain()` as well, if you don't forget about it.
+			ret['cstr'] = fabulous.color.ColorString
 
-		for attr in fabulous_attrs:
-			if hasattr(fabulous.color, attr):
-				ret[attr] = functools.partial(lambdas_arent_working_so_fuck_you_python, attr)
 	else:
 		#def fg256(c, text):
 		#	return text
