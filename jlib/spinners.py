@@ -37,13 +37,13 @@ spinner_chars_3 = ['▘', '▝', '▗', '▖']
 spinner_chars_4 = ['┌', '┐', '┘', '└']
 
 class FabulousSpinner:
-	def __init__(self, position_chars = spinner_chars_2, spectrum_length=255*3, spectrum_duration=60.0, cycle_mode=SpinnerCycle.COLORSDURATION, force=False, fg256=False):
+	def __init__(self, position_chars = spinner_chars_2, spectrum_length=255*3, spectrum_duration=60.0, cycle_mode=SpinnerCycle.COLORSDURATION, force=False, fg256=False, autostr=True):
 		self.position_chars = position_chars
 		self.spectrum_length = spectrum_length
 		self.spectrum_duration = spectrum_duration
 		self.cycle_mode = cycle_mode
 		self.position = 0
-		fab = jlib.get_fabulous(force=force)
+		fab = jlib.get_fabulous(force=force, autostr=autostr)
 		self.fgfunc = fab['fgtrue']
 		if fg256:
 			self.fgfunc = fab['fg256']
