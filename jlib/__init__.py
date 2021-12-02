@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.20"
+__version__ = "1.0.21"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -1370,6 +1370,25 @@ class FakeDirEntry:
 			self._is_symlink = stat.S_ISLNK(self.stat(follow_symlinks=False).st_mode)
 		return self._is_symlink
 # }}}
+# URL STUFF{{{
+# This was lifted from https://gist.github.com/mahmoud/2fe281a8daaff26cfe9c15d2c5bf5c8b
+# This did the lifting:
+# import requests, json
+# print("url_schema_port_lut = {}".format(repr(dict([ [x, y] for x, y in json.loads(requests.get('https://gist.githubusercontent.com/mahmoud/2fe281a8daaff26cfe9c15d2c5bf5c8b/raw/0f2490ea69dd4cb96400920d6fd8692205917eb6/scheme_port_map.json').content).items() if y is not None ]))))
+url_schema_port_lut = {'acap': 674, 'afp': 548, 'dict': 2628, 'dns': 53, 'ftp': 21, 'git': 9418, 'gopher': 70, 'http': 80, 'https': 443, 'imap': 143, 'ipp': 631, 'ipps': 631, 'irc': 194, 'ircs': 6697, 'ldap': 389, 'ldaps': 636, 'mms': 1755, 'msrp': 2855, 'mtqp': 1038, 'nfs': 111, 'nntp': 119, 'nntps': 563, 'pop': 110, 'prospero': 1525, 'redis': 6379, 'rsync': 873, 'rtsp': 554, 'rtsps': 322, 'rtspu': 5005, 'sftp': 22, 'smb': 445, 'snmp': 161, 'ssh': 22, 'svn': 3690, 'telnet': 23, 'ventrilo': 3784, 'vnc': 5900, 'wais': 210, 'ws': 80, 'wss': 443}
+def url_to_hostname_port(url):
+	"""
+	Given an url, returns the hostname and port number that one would use to connect to that service.
+	"""
+	import urllib
+	parsed = urllib.parse.urlparse(url)
+	if parsed.port is None:
+		ret_port = url_schema_port_lut[parsed.scheme]
+	else:
+		ret_port = parsed.port
+	ret_hostname = parsed.hostname
+	return [ret_hostname, ret_port]
+#}}}
 
 def scanwalk(top, topdown=True, onerror=None, followlinks=False):# {{{
     """
