@@ -173,6 +173,7 @@ class GenericCompressedCondensed(Condensed):
 			elif newmode == Mode.CLEAR:
 				self._fobj.seek(0)
 				self._fobj.truncate()
+				self._qty = 0
 			elif newmode == Mode.REWIND:
 				self._fobj.seek(0)
 				self.fobj = self._init_compressor(fileobj=self._fobj, mode="rb")

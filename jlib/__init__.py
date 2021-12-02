@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.19"
+__version__ = "1.0.20"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -71,7 +71,7 @@ def chomp(s):
 	import re
 	return re.sub(r'\s*$', '', s)
 
-def lstripn(text, count, chars=None):
+def lstripn(text, count, chars=None):# {{{
 	"""
 	Strip up to `count` leading characters of whitespace from a string.
 
@@ -89,8 +89,8 @@ def lstripn(text, count, chars=None):
 		else:
 			break
 	return text
-
-def rstripn(text, count, chars=None):
+# }}}
+def rstripn(text, count, chars=None):# {{{
 	"""
 	Strip up to `count` trailing characters of whitespace from a string.
 
@@ -108,8 +108,8 @@ def rstripn(text, count, chars=None):
 		else:
 			break
 	return text
-
-def stripn(text, count, chars=None):
+# }}}
+def stripn(text, count, chars=None):# {{{
 	"""
 	Strip up to `count` leading and trailing characters of whitespace
 	from a string.
@@ -121,7 +121,7 @@ def stripn(text, count, chars=None):
 	text = lstripn(text, count, chars=chars)
 	text = rstripn(text, count, chars=chars)
 	return text
-
+# }}}
 def shellunescape(s):
 	pos = 0
 	idx = s.find('\\', pos)
@@ -534,8 +534,8 @@ def any_tz(name):# {{{
 	if len(_TZLOOKUP) == 0:
 		_TZLOOKUP = dict(zip(pytz.all_timezones, pytz.all_timezones) + map(lambda x: [datetime.datetime.now(pytz.timezone(x)).tzname(), x], pytz.all_timezones))
 	return pytz.timezone(_TZLOOKUP[name])
-
-def timedelta_to_DHMS(dur, weeks=True, precision=0):
+#}}}
+def timedelta_to_DHMS(dur, weeks=True, precision=0): # {{{
 	# doc{{{
 	"""
 	Given a timedelta object, outputs a string representing said duration.
@@ -1116,17 +1116,21 @@ class UnixSearchPath(list):# {{{
 	def to_string(self):
 		"""Call this method to turn a UnixSearchPath (list) back into a flat string."""
 		return ':'.join(self)
-	def find(self, target):
+	def find(self, target, joinfunc=None, searchfunc=None):
 		"""Iterates through the SearchPath, looking for and returning the first occurrence of target.
 		If target is not found, ValueError will be raised."""
-		results = self.find_all(target)
+		results = self.find_all(target, joinfunc=joinfunc, searchfunc=searchfunc)
 		if len(results) < 1:
 			raise ValueError(target)
 		return results[0]
-	def find_all(self, target):
+	def find_all(self, target, joinfunc=None, searchfunc=None):
 		"""Returns all occurrences of target in the SearchPath, ordered by, well, search order.
 		If no occurrences are found, you'll get back an empty list.  Because empty list."""
-		return [x for x in [self.joinfunc(x, target) for x in self] if self.searchfunc(x)]
+		if joinfunc is None:
+			joinfunc = self.joinfunc
+		if searchfunc is None:
+			searchfunc = self.searchfunc
+		return [x for x in [joinfunc(x, target) for x in self] if searchfunc(x)]
 	def exists(self, target):
 		"""Somewhat like the find() method, except you're getting back a True or False."""
 		try:
@@ -1151,10 +1155,29 @@ class KeywordSearchPath(UnixSearchPath):# {{{
 			else:
 				keywords[frags[0]] = frags[1]
 
-		return \
-			[target] if os.path.isabs(target) and os.path.exists(target) \
-			else [keywords[target]] if target in keywords else \
-			[] + [x for x in [self.joinfunc(x, target) for x in paths] if self.searchfunc(x)]
+		if os.path.isabs(target) and os.path.exists(target):
+			return [target]
+		elif target in keywords:
+			return [keywords[target]]
+		else:
+			return [] + [ x for x in [ self.joinfunc(x, target) for x in paths ] if self.searchfunc(x) ]
+	def find_all_closest(self, target):
+		keywords = {}
+		paths = []
+
+		for item in self:
+			frags = item.split('=', 1)
+			if len(frags) == 1:
+				paths.append(item)
+			else:
+				keywords[frags[0]] = frags[1]
+
+		if os.path.isabs(target) and os.path.exists(target):
+			return [target]
+		elif target in keywords:
+			return [keywords[target]]
+		else:
+			return [] + sorted([ item for sublist in [ [ x.path for x in os.scandir(directory) if x.name.startswith(target) ] for directory in paths ] for item in sublist ], key=lambda x: [len(os.path.basename(x)), os.path.basename(x)])
 # }}}
 
 def get_syspath():
