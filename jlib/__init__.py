@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.21"
+__version__ = "1.0.22"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -1901,6 +1901,24 @@ def bitflip(val):# {{{
 	b = (b & 0xCC) >> 2 | (b & 0x33) << 2
 	b = (b & 0xAA) >> 1 | (b & 0x55) << 1
 	return b
+# }}}
+
+def make_headers_dict(text):# {{{
+	"""
+	Takes a bunch of text representing HTTP headers (much like what you'd get
+	if you ran `nc -l 8666` and pointed your web browser to
+	`http://localhost:8666/`), and turns it into a dict you can give to
+	`requests.session`.
+	This is a convenience function because nowadays it seems like you can't
+	get ANY website to act properly unless you pretend to look like a "real"
+	web browser...
+	"""
+	from email import message_from_string
+	headers = dict(message_from_string("\r\n".join([ x for x in text.splitlines() if len(x) > 0 and len(x.split(': ', 1)) == 2 ]) + "\r\n"))
+	for k in 'Host Cookie'.split():
+		if k in headers:
+			del headers[k]
+	return headers
 # }}}
 
 ########################
