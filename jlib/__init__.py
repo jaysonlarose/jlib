@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.22"
+__version__ = "1.0.23"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -731,6 +731,12 @@ def timestamp_to_localdatetime(ts):# {{{
 	# }}}
 	import pytz.reference, datetime
 	return datetime.datetime.fromtimestamp(ts).replace(tzinfo=pytz.reference.Local)
+# }}}
+def date_to_localdatetime(d):# {{{
+	return timestamp_to_localdatetime(time.mktime(d.timetuple()))
+# }}}
+def date_to_utcdatetime(d):# {{{
+	return date_to_localdatetime(d).replace(tzinfo=pytz.reference.UTC)
 # }}}
 # }}}
 # ARRAY MAKING AND BREAKING{{{
