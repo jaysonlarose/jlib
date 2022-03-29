@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.23"
+__version__ = "1.0.24"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -536,7 +536,7 @@ def any_tz(name):# {{{
 	return pytz.timezone(_TZLOOKUP[name])
 #}}}
 def timedelta_to_DHMS(dur, weeks=True, precision=0): # {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Given a timedelta object, outputs a string representing said duration.
 	For example: 
@@ -621,7 +621,7 @@ def DHMS_to_timedelta(dhms):# {{{
 	return datetime.timedelta(**timedelta_kwargs)
 # }}}
 def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
-	# doc{{{
+	# doc {{{
 	"""\
 	Takes a timezone-aware datetime object and makes it look like:
 
@@ -647,7 +647,7 @@ def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
 	return timestamp_txt
 # }}}
 def datetime_to_timestamp(dt):# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Turns a timezone-aware datetime object into a standard UTC-seconds-since-epoch timestamp.
 
@@ -665,7 +665,7 @@ def datetime_to_timestamp(dt):# {{{
 	return ctime
 # }}}
 def parse_decimal_timestamp(ts):# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Turns a fractional timestamp (1559053068.263864) provided as a string
 	into a datetime object. This datetime object will be timezone-aware,
@@ -693,7 +693,7 @@ def parse_decimal_timestamp(ts):# {{{
 	return dt
 # }}}
 def utcnow_tzaware():# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Convenience function, equivalent to 
 	`datetime.datetime.utcnow().replace(tzinfo=pytz.reference.UTC)`
@@ -703,7 +703,7 @@ def utcnow_tzaware():# {{{
 	return datetime.datetime.utcnow().replace(tzinfo=pytz.reference.UTC)
 # }}}
 def now_tzaware():# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Convenience function, equivalent to 
 	`datetime.datetime.now(tz=pytz.reference.Local)`
@@ -713,7 +713,7 @@ def now_tzaware():# {{{
 	return datetime.datetime.now(tz=pytz.reference.Local)
 # }}}
 def timestamp_to_utcdatetime(ts):# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Like `datetime.datetime.utcfromtimestamp()`, except it returns a
 	timezone-aware datetime object.
@@ -723,7 +723,7 @@ def timestamp_to_utcdatetime(ts):# {{{
 	return datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=pytz.reference.UTC)
 # }}}
 def timestamp_to_localdatetime(ts):# {{{
-	# doc{{{
+	# doc {{{
 	"""
 	Like `datetime.datetime.fromtimestamp()`, except it returns a
 	timezone-aware datetime object.
@@ -733,10 +733,56 @@ def timestamp_to_localdatetime(ts):# {{{
 	return datetime.datetime.fromtimestamp(ts).replace(tzinfo=pytz.reference.Local)
 # }}}
 def date_to_localdatetime(d):# {{{
+	# doc {{{
+	"""
+	Returns a timezone-aware datetime object corresponding to midnight
+	localtime for the supplied datetime.date object.
+
+	Note: python datetime.date objects are normally referenced to the local
+	timezone, and are inherently timezone-naive, so just keep that in mind.
+	"""
+	# }}}
+	import time
 	return timestamp_to_localdatetime(time.mktime(d.timetuple()))
 # }}}
 def date_to_utcdatetime(d):# {{{
+	# doc {{{
+	"""
+	Returns a timezone-aware datetime object corresponding to midnight
+	UTC for the supplied datetime.date object.
+
+	Note: python datetime.date objects are normally referenced to the local
+	timezone, and are inherently timezone-naive, so just keep that in mind.
+	"""
+	# }}}
+	import pytz.reference
 	return date_to_localdatetime(d).replace(tzinfo=pytz.reference.UTC)
+# }}}
+def datetime_to_utcdate(dt):# {{{
+	# doc {{{
+	"""
+	Returns a datetime.date object corresponding to the given timezone-aware 
+	datetime, with UTC as the timezone reference.
+
+	Note: python datetime.date objects are normally referenced to the local
+	timezone, and are inherently timezone-naive, so just keep that in mind.
+	"""
+	# }}}
+	import pytz.reference, datetime
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local)))
+# }}}
+def datetime_to_localdate(td):# {{{
+	# doc {{{
+	"""
+	Returns a datetime.date object corresponding to the given timezone-aware 
+	datetime, with the local timezone as the timezone reference.
+
+	Note: python datetime.date objects are normally referenced to the local
+	timezone, and are inherently timezone-naive, so just keep that in mind.
+	"""
+	# }}}
+	import datetime
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt))
 # }}}
 # }}}
 # ARRAY MAKING AND BREAKING{{{
