@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.24"
+__version__ = "1.0.25"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -771,7 +771,7 @@ def datetime_to_utcdate(dt):# {{{
 	import pytz.reference, datetime
 	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local)))
 # }}}
-def datetime_to_localdate(td):# {{{
+def datetime_to_localdate(dt):# {{{
 	# doc {{{
 	"""
 	Returns a datetime.date object corresponding to the given timezone-aware 
