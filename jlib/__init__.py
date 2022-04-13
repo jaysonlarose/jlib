@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.25"
+__version__ = "1.0.26"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -58,7 +58,7 @@ class JException(Exception):
 
 # STRING STUFF{{{
 
-def is_ascii(value):
+def is_ascii(value):# {{{
 	# TODO: some time in the indefinite future, áfter I've excised all of my
 	# legacy code using this thing, rework it to operate natively on bytes
 	# instead of converting bytes to str.
@@ -66,11 +66,39 @@ def is_ascii(value):
 	if isinstance(value, bytes):
 		value = value.decode()
 	return not bool(len(list(filter(lambda x: (x < 0x20 or x > 0x7e) and x not in (9, 10, 13), map(lambda x: ord(x), value)))))
-
-def chomp(s):
+# }}}
+def is_int(value):# {{{
+	"""
+	Super simple function. Tries to call `int()` on the supplied value.
+	Returns True if it worked. Catches the ValueError and returns False if
+	it didn't.
+	"""
+	try:
+		int(value)
+		return True
+	except ValueError:
+		return False
+# }}}
+def is_float(value):# {{{
+	"""
+	Just as simple as `is_int()`. Tries to call `float()` on the supplied value.
+	Returns True if it worked. Catches the ValueError and returns False if
+	it didn't.
+	"""
+	try:
+		float(value)
+		return True
+	except ValueError:
+		return False
+# }}}
+def chomp(s):# {{{
+	"""
+	This is like perl's `chomp()` function.
+	Probably better to just use `str.rstrip()`.
+	"""
 	import re
 	return re.sub(r'\s*$', '', s)
-
+# }}}
 def lstripn(text, count, chars=None):# {{{
 	"""
 	Strip up to `count` leading characters of whitespace from a string.
@@ -170,14 +198,14 @@ def wcsrjust(text, width, fillchar=' '):# {{{
 	pad = width - twidth
 	return (fillchar * pad) + text
 # }}}
-# }}}
-
-def ansiwcsrjust(text, width, fillchar=' '):
+def ansiwcsrjust(text, width, fillchar=' '):# {{{
 	import JaysTerm
 	twidth = JaysTerm.textwidth(text)
 	if twidth >= width:
 		return text
 	return (fillchar * pad) + text
+# }}}
+# }}}
 # NUMBER STUFF{{{
 
 def bytelen_to_humanreadable(val, binary=True, min_magnitude=0, max_magnitude=8, separator=''):# {{{
