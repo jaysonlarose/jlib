@@ -10,7 +10,7 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.26"
+__version__ = "1.0.27"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -1844,9 +1844,24 @@ class proppadict(dict):# {{{
 		return proppadict(self.items())
 # }}}
 
-
-	
-
+class HexDumper:
+	def __init__(self, width=16):
+		self.width = width
+	@classmethod
+	def with_colwidth(cls, columns):
+		charwidth = (columns - 1) // 4
+		return cls(charwidth)
+	def dump(self, data):
+		import binascii
+		if not isinstance(data, bytes):
+			raise ValueError("Must be an instance of bytes")
+		lines = splitlen_array_remainder(data, self.width)
+		ret = []
+		for linedata in lines:
+			hexstring = binascii.hexlify(linedata).decode()
+			ascstring = ''.join([ chr(x) if x >= 32 and x <= 126 else '.' for x in linedata ])
+			ret.append((" ".join(splitlen_array_remainder(hexstring, 2))).ljust((self.width * 3) - 1) + "  " + ascstring)
+		return "\n".join(ret) + "\n"
 
 
 class GhettoUpdatingLine(object):# {{{
@@ -2415,7 +2430,7 @@ class OrderedSet(collections.OrderedDict, collections.MutableSet):# {{{
 	union = property(lambda self: self.__or__)
 # }}}
 
-class Lut:
+class Lut:# {{{
 	"""
 	Oftentimes, when interfacing with APIs (especially of the C variety),
 	you find yourself needing to resolve a symbolic name from an id value,
@@ -2487,7 +2502,7 @@ class Lut:
 	@property
 	def ids(self):
 		return self.byid.keys()
-
+# }}}
 
 class Nalpha:# {{{
 	render_attrs = {
@@ -2706,7 +2721,7 @@ class SomewhatPhisticatedHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 	#	return ret
 # }}}
 
-def kill_thread(thread_obj):
+def kill_thread(thread_obj):# {{{
 	"""
 	Uses voodoo incantation `ctypes.pythonapi.PyThreadState_SetAsyncExc()` to
 	compel a thread to disapparate.
@@ -2719,3 +2734,4 @@ def kill_thread(thread_obj):
 	if res > 1:
 		ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
 		raise RuntimeError("Thread refused to die!")
+# }}}
