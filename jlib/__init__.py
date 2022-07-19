@@ -10,7 +10,8 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-__version__ = "1.0.27"
+import importlib.metadata
+__version__ = importlib.metadata.version("jlib")
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -254,7 +255,7 @@ def bytelen_to_humanreadable(val, binary=True, min_magnitude=0, max_magnitude=8,
 		suffixes = decimal_suffixes
 
 	if max_magnitude > len(suffixes) - 1:
-		max_magnitude = len(suffiexes) - 1
+		max_magnitude = len(suffixes) - 1
 
 	if min_magnitude < 0 or min_magnitude > max_magnitude:
 		raise ValueError
@@ -1083,6 +1084,10 @@ def splitpath(x):
 	"""
 	A version of `os.path.split` that keeps on splitting until the splitting's done.
 	Returns a list.
+
+	Note that '/' is always the first element of the returned list.
+
+	splitpath('/stuff.txt') == ['/', 'stuff.txt']
 	"""
 	a, b = os.path.split(x)
 	out = []
@@ -2382,53 +2387,53 @@ def round_properly(value, precision=0):# {{{
 # }}}
 
 
-class OrderedSet(collections.OrderedDict, collections.MutableSet):# {{{
-	"""
-	Lifted from:
-	https://stackoverflow.com/questions/1653970/does-python-have-an-ordered-set
-
-	NOTE: Don't use this. Go install the `orderedset` module from PIP instead.
-	You can do much more useful things with it:
-	>>> import orderedset
-	>>> orse = orderedset.OrderedSet(['xid', 'pid', 'x', 'y'])
-	>>> orse.index('xid')
-	0
-	>>> orse[0]
-	'xid'
-
-	"""
-	def update(self, *args, **kwargs):
-		if kwargs:
-			raise TypeError("update() takes no keyword arguments")
-		for s in args:
-			for e in s:
-				 self.add(e)
-	def add(self, elem):
-		self[elem] = None
-	def discard(self, elem):
-		self.pop(elem, None)
-	def __le__(self, other):
-		return all(e in other for e in self)
-	def __lt__(self, other):
-		return self <= other and self != other
-	def __ge__(self, other):
-		return all(e in self for e in other)
-	def __gt__(self, other):
-		return self >= other and self != other
-	def __repr__(self):
-		return 'OrderedSet([%s])' % (', '.join(map(repr, self.keys())))
-	def __str__(self):
-		return '{%s}' % (', '.join(map(repr, self.keys())))
-	difference = property(lambda self: self.__sub__)
-	difference_update = property(lambda self: self.__isub__)
-	intersection = property(lambda self: self.__and__)
-	intersection_update = property(lambda self: self.__iand__)
-	issubset = property(lambda self: self.__le__)
-	issuperset = property(lambda self: self.__ge__)
-	symmetric_difference = property(lambda self: self.__xor__)
-	symmetric_difference_update = property(lambda self: self.__ixor__)
-	union = property(lambda self: self.__or__)
-# }}}
+#class OrderedSet(collections.OrderedDict, collections.MutableSet):# {{{
+#	"""
+#	Lifted from:
+#	https://stackoverflow.com/questions/1653970/does-python-have-an-ordered-set
+#
+#	NOTE: Don't use this. Go install the `orderedset` module from PIP instead.
+#	You can do much more useful things with it:
+#	>>> import orderedset
+#	>>> orse = orderedset.OrderedSet(['xid', 'pid', 'x', 'y'])
+#	>>> orse.index('xid')
+#	0
+#	>>> orse[0]
+#	'xid'
+#
+#	"""
+#	def update(self, *args, **kwargs):
+#		if kwargs:
+#			raise TypeError("update() takes no keyword arguments")
+#		for s in args:
+#			for e in s:
+#				 self.add(e)
+#	def add(self, elem):
+#		self[elem] = None
+#	def discard(self, elem):
+#		self.pop(elem, None)
+#	def __le__(self, other):
+#		return all(e in other for e in self)
+#	def __lt__(self, other):
+#		return self <= other and self != other
+#	def __ge__(self, other):
+#		return all(e in self for e in other)
+#	def __gt__(self, other):
+#		return self >= other and self != other
+#	def __repr__(self):
+#		return 'OrderedSet([%s])' % (', '.join(map(repr, self.keys())))
+#	def __str__(self):
+#		return '{%s}' % (', '.join(map(repr, self.keys())))
+#	difference = property(lambda self: self.__sub__)
+#	difference_update = property(lambda self: self.__isub__)
+#	intersection = property(lambda self: self.__and__)
+#	intersection_update = property(lambda self: self.__iand__)
+#	issubset = property(lambda self: self.__le__)
+#	issuperset = property(lambda self: self.__ge__)
+#	symmetric_difference = property(lambda self: self.__xor__)
+#	symmetric_difference_update = property(lambda self: self.__ixor__)
+#	union = property(lambda self: self.__or__)
+## }}}
 
 class Lut:# {{{
 	"""
@@ -2567,6 +2572,7 @@ class Nalpha:# {{{
 # }}}
 
 
+# SQLITE3 STUFF {{{
 def tenacious_execute(cursor, *args, **kwargs):# {{{
 	import sqlite3, time
 	while True:
@@ -2577,6 +2583,21 @@ def tenacious_execute(cursor, *args, **kwargs):# {{{
 			if 'database is locked' not in e.args:
 				raise
 			time.sleep(0.01)
+# }}}
+try:
+	import sqlite3
+	class ProppaRow(sqlite3.Row):
+		def __getattr__(self, attr):
+			if attr in self:
+				return self[attr]
+			else:
+				raise AttributeError
+		def __repr__(self):
+			return str(dict(self))
+
+except (ImportError, ModuleNotFoundError):
+	print("oof")
+
 # }}}
 def lsblk_get_devices(as_dict=True):# {{{
 	"""
