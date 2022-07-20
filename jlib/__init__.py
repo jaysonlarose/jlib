@@ -2584,20 +2584,21 @@ def tenacious_execute(cursor, *args, **kwargs):# {{{
 				raise
 			time.sleep(0.01)
 # }}}
-try:
-	import sqlite3
-	class ProppaRow(sqlite3.Row):
-		def __getattr__(self, attr):
-			if attr in self:
-				return self[attr]
-			else:
-				raise AttributeError
-		def __repr__(self):
-			return str(dict(self))
-
-except (ImportError, ModuleNotFoundError):
-	print("oof")
-
+class ProppaRow:
+	def __init__(self, cur, row):
+		self.fields = [ x[0] for x in cur.description ]
+		self._dict = dict(zip(self.fields, row))
+	def __len__(self):
+		return len(self.fields)
+	def __getattr__(self, attr):
+		if attr in self._dict:
+			return self._dict[attr]
+		else:
+			raise AttributeError
+	def __getitiem__(self, idx):
+		return self._dict[self.fields[idx]]
+	def __repr__(self):
+		return str(dict(self))
 # }}}
 def lsblk_get_devices(as_dict=True):# {{{
 	"""
