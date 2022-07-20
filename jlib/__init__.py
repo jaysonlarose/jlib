@@ -2617,7 +2617,7 @@ class ProppaRow:
 	def __getitem__(self, idx):
 		return self._dict[self._fields[idx]]
 	def __repr__(self):
-		return str(dict(self))
+		return str(self._dict)
 # }}}
 def lsblk_get_devices(as_dict=True):# {{{
 	"""
