@@ -10,8 +10,13 @@ else:
 import os, atexit, collections, argparse, enum, string
 from threading import Thread
 
-import importlib.metadata
-__version__ = importlib.metadata.version("jlib")
+if sys.version_info.major >= 3:
+	if sys.version_info.minor < 8:
+		import importlib_metadata
+		__version__ = importlib_metadata.version("jlib")
+	else:
+		import importlib.metadata
+		__version__ = importlib.metadata.version("jlib")
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
