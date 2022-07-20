@@ -2585,18 +2585,37 @@ def tenacious_execute(cursor, *args, **kwargs):# {{{
 			time.sleep(0.01)
 # }}}
 class ProppaRow:
+	"""
+	An sqlite3 row factory with a proppadict twist.
+
+	Note that `self._fields` and `self._dict` will always be available,
+	and contain:
+	* _fields: list of row field names, in the order returned by the database
+	  server.
+	* _dict:   field->value map.
+
+	If no rows named "fields" or "dict" exist, the values of _fields and
+	_dict will also be available as `self.fields` and `self.dict`.
+
+	If you're misfortunate enough to have rows named `_dict` or `_fields`,
+	then you can access these rows via `self['_fields'] notation.
+	"""
 	def __init__(self, cur, row):
-		self.fields = [ x[0] for x in cur.description ]
-		self._dict = dict(zip(self.fields, row))
+		self._fields = [ x[0] for x in cur.description ]
+		self._dict = dict(zip(self._fields, row))
 	def __len__(self):
-		return len(self.fields)
+		return len(self._fields)
 	def __getattr__(self, attr):
 		if attr in self._dict:
 			return self._dict[attr]
+		elif attr == 'fields':
+			return self._fields
+		elif attr == 'dict':
+			return self._dict
 		else:
 			raise AttributeError
-	def __getitiem__(self, idx):
-		return self._dict[self.fields[idx]]
+	def __getitem__(self, idx):
+		return self._dict[self._fields[idx]]
 	def __repr__(self):
 		return str(dict(self))
 # }}}
