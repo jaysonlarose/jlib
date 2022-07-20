@@ -2,7 +2,7 @@
 
 import setuptools, configparser
 
-parser = configparser.ConfigParser
+parser = configparser.ConfigParser()
 parser.read("setup.cfg")
 
 
