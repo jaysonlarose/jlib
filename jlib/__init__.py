@@ -706,6 +706,39 @@ def datetime_to_timestamp(dt, as_decimal=True):# {{{
 			ctime += (float(dt.microsecond) / int(1e6))
 	return ctime
 # }}}
+def datetime_to_serialized(dt):# {{{
+	# doc {{{
+	"""
+	Turns a timezone-aware datetime object into a serialized byte format.
+
+	This byte format consists of:
+	* 64-bit big end integer: seconds past epoch
+	* 24-bit bit end integer: microseconds
+	"""
+	# }}}
+	import struct
+	ts = datetime_to_timestamp(dt)
+	time_t = int(ts)
+	micros = dt.microsecond
+	time_t_bytes = struct.pack(">Q", time_t)
+	micros_bytes = struct.pack(">I", micros)
+	return time_t_bytes + micros_bytes[1:]
+# }}}
+def serialized_to_datetime(data_bytes):# {{{
+	# doc{{{
+	"""
+	Turns a serialized timestamp into a datetime object.
+	"""
+	# }}}
+	import struct, decimal
+	time_t_bytes = data_bytes[:struct.calcsize(">Q")]
+	micros_bytes = bytes([0]) + data_bytes[struct.calcsize(">Q"):struct.calcsize(">Q") + 3]
+	time_t = struct.unpack(">Q", time_t_bytes)[0]
+	micros = struct.unpack(">I", micros_bytes)[0]
+	ts = decimal.Decimal(time_t)
+	ts += decimal.Decimal(micros) / decimal.Decimal(1e6)
+	return timestamp_to_utcdatetime(ts)
+# }}}
 def parse_decimal_timestamp(ts):# {{{
 	# doc {{{
 	"""
