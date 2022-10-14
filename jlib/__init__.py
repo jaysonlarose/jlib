@@ -761,7 +761,9 @@ def timestamp_to_utcdatetime(ts):# {{{
 	timezone-aware datetime object.
 	"""
 	# }}}
-	import pytz.reference, datetime
+	import pytz.reference, datetime, decimal
+	if isinstance(ts, decimal.Decimal):
+		ts = float(ts)
 	return datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=pytz.reference.UTC)
 # }}}
 def timestamp_to_localdatetime(ts):# {{{
@@ -771,7 +773,9 @@ def timestamp_to_localdatetime(ts):# {{{
 	timezone-aware datetime object.
 	"""
 	# }}}
-	import pytz.reference, datetime
+	import pytz.reference, datetime, decimal
+	if isinstance(ts, decimal.Decimal):
+		ts = float(ts)
 	return datetime.datetime.fromtimestamp(ts).replace(tzinfo=pytz.reference.Local)
 # }}}
 def date_to_localdatetime(d):# {{{

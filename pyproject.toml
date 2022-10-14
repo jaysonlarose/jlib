@@ -4,4 +4,4 @@ requires = [
 	"wheel"
 ]
 build-backend = "setuptools.build_meta"
-version = "1.0.31"
+version = "1.0.32"
