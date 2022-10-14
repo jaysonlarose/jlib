@@ -675,12 +675,14 @@ def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
 		timestamp_txt = "{} {}".format(timestamp_txt, dt.strftime("%z"))
 	return timestamp_txt
 # }}}
-def datetime_to_timestamp(dt):# {{{
+def datetime_to_timestamp(dt, as_decimal=True):# {{{
 	# doc {{{
 	"""
 	Turns a timezone-aware datetime object into a standard UTC-seconds-since-epoch timestamp.
 
 	If the datetime object passed to this function has no timezone information, it is treated as UTC.
+
+	If the "as_decimal" parameter is set True, the decimal module will be used.
 	"""
 	# }}}
 	from pytz.reference import LocalTimezone, UTC
@@ -688,9 +690,15 @@ def datetime_to_timestamp(dt):# {{{
 	if dt.tzinfo is None:
 		dt = dt.replace(tzinfo=UTC)
 	tupe = dt.astimezone(LocalTimezone()).timetuple()
-	ctime = time.mktime(tupe)
-	if dt.microsecond > 0:
-		ctime += (float(dt.microsecond) / int(1e6))
+	if as_decimal:
+		import decimal
+		ctime = decimal.Decimal(time.mktime(tupe))
+		if dt.microsecond > 0:
+			ctime += decimal.Decimal(dt.microsecond) / decimal.Decimal(1e6)
+	else:
+		ctime = time.mktime(tupe)
+		if dt.microsecond > 0:
+			ctime += (float(dt.microsecond) / int(1e6))
 	return ctime
 # }}}
 def parse_decimal_timestamp(ts):# {{{
