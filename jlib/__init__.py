@@ -848,7 +848,7 @@ def datetime_to_utcdate(dt):# {{{
 	"""
 	# }}}
 	import pytz.reference, datetime
-	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local)))
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local), as_decimal=False))
 # }}}
 def datetime_to_localdate(dt):# {{{
 	# doc {{{
@@ -861,7 +861,7 @@ def datetime_to_localdate(dt):# {{{
 	"""
 	# }}}
 	import datetime
-	return datetime.date.fromtimestamp(datetime_to_timestamp(dt))
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt, as_decimal=False))
 # }}}
 # }}}
 # ARRAY MAKING AND BREAKING{{{
