@@ -1892,7 +1892,7 @@ class easy_opt(object):# {{{
 		return x in s._opts
 # }}}
 
- proppadict(dict):# {{{
+class proppadict(dict):# {{{
 	"""
 	A proppadict is a dict whose keys can also be accessed by attributes.
 
