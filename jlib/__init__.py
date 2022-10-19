@@ -686,12 +686,14 @@ def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
 		timestamp_txt = "{} {}".format(timestamp_txt, dt.strftime("%z"))
 	return timestamp_txt
 # }}}
-def datetime_to_timestamp(dt):# {{{
+def datetime_to_timestamp(dt, as_decimal=True):# {{{
 	# doc {{{
 	"""
 	Turns a timezone-aware datetime object into a standard UTC-seconds-since-epoch timestamp.
 
 	If the datetime object passed to this function has no timezone information, it is treated as UTC.
+
+	If the "as_decimal" parameter is set True, the decimal module will be used.
 	"""
 	# }}}
 	from pytz.reference import LocalTimezone, UTC
@@ -699,10 +701,49 @@ def datetime_to_timestamp(dt):# {{{
 	if dt.tzinfo is None:
 		dt = dt.replace(tzinfo=UTC)
 	tupe = dt.astimezone(LocalTimezone()).timetuple()
-	ctime = time.mktime(tupe)
-	if dt.microsecond > 0:
-		ctime += (float(dt.microsecond) / int(1e6))
+	if as_decimal:
+		import decimal
+		ctime = decimal.Decimal(time.mktime(tupe))
+		if dt.microsecond > 0:
+			ctime += decimal.Decimal(dt.microsecond) / decimal.Decimal(1e6)
+	else:
+		ctime = time.mktime(tupe)
+		if dt.microsecond > 0:
+			ctime += (float(dt.microsecond) / int(1e6))
 	return ctime
+# }}}
+def datetime_to_serialized(dt):# {{{
+	# doc {{{
+	"""
+	Turns a timezone-aware datetime object into a serialized byte format.
+
+	This byte format consists of:
+	* 64-bit big end integer: seconds past epoch
+	* 24-bit bit end integer: microseconds
+	"""
+	# }}}
+	import struct
+	ts = datetime_to_timestamp(dt)
+	time_t = int(ts)
+	micros = dt.microsecond
+	time_t_bytes = struct.pack(">Q", time_t)
+	micros_bytes = struct.pack(">I", micros)
+	return time_t_bytes + micros_bytes[1:]
+# }}}
+def serialized_to_datetime(data_bytes):# {{{
+	# doc{{{
+	"""
+	Turns a serialized timestamp into a datetime object.
+	"""
+	# }}}
+	import struct, decimal
+	time_t_bytes = data_bytes[:struct.calcsize(">Q")]
+	micros_bytes = bytes([0]) + data_bytes[struct.calcsize(">Q"):struct.calcsize(">Q") + 3]
+	time_t = struct.unpack(">Q", time_t_bytes)[0]
+	micros = struct.unpack(">I", micros_bytes)[0]
+	ts = decimal.Decimal(time_t)
+	ts += decimal.Decimal(micros) / decimal.Decimal(1e6)
+	return timestamp_to_utcdatetime(ts)
 # }}}
 def parse_decimal_timestamp(ts):# {{{
 	# doc {{{
@@ -759,7 +800,9 @@ def timestamp_to_utcdatetime(ts):# {{{
 	timezone-aware datetime object.
 	"""
 	# }}}
-	import pytz.reference, datetime
+	import pytz.reference, datetime, decimal
+	if isinstance(ts, decimal.Decimal):
+		ts = float(ts)
 	return datetime.datetime.utcfromtimestamp(ts).replace(tzinfo=pytz.reference.UTC)
 # }}}
 def timestamp_to_localdatetime(ts):# {{{
@@ -769,7 +812,9 @@ def timestamp_to_localdatetime(ts):# {{{
 	timezone-aware datetime object.
 	"""
 	# }}}
-	import pytz.reference, datetime
+	import pytz.reference, datetime, decimal
+	if isinstance(ts, decimal.Decimal):
+		ts = float(ts)
 	return datetime.datetime.fromtimestamp(ts).replace(tzinfo=pytz.reference.Local)
 # }}}
 def date_to_localdatetime(d):# {{{
@@ -809,7 +854,7 @@ def datetime_to_utcdate(dt):# {{{
 	"""
 	# }}}
 	import pytz.reference, datetime
-	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local)))
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt.astimezone(pytz.reference.UTC).replace(tzinfo=pytz.reference.Local), as_decimal=False))
 # }}}
 def datetime_to_localdate(dt):# {{{
 	# doc {{{
@@ -822,7 +867,7 @@ def datetime_to_localdate(dt):# {{{
 	"""
 	# }}}
 	import datetime
-	return datetime.date.fromtimestamp(datetime_to_timestamp(dt))
+	return datetime.date.fromtimestamp(datetime_to_timestamp(dt, as_decimal=False))
 # }}}
 # }}}
 # ARRAY MAKING AND BREAKING{{{
