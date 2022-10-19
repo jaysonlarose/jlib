@@ -1939,7 +1939,7 @@ def proppagate(obj):# {{{
 	elif type(obj) in [str, int, type(None)]:
 		ret = obj
 	else:
-		ret = type(obj)([ x for x in obj ])
+		ret = type(obj)([ proppagate(x) for x in obj ])
 	return ret
 # }}}
 
