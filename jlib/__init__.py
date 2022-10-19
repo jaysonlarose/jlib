@@ -1932,11 +1932,14 @@ def proppagate(obj):# {{{
 
 	Returns something like a deepcopy of the supplied object.
 	"""
+	import colllections.abc
 	if isinstance(obj, dict):
 		ret = proppadict()
 		for k, v in obj.items():
 			ret[k] = proppagate(v)
-	elif type(obj) in [str, int, type(None)]:
+	elif type(obj) in [str]:
+		ret = obj
+	elif not isinstance(obj, collections.abc.Iterable):
 		ret = obj
 	else:
 		ret = type(obj)([ proppagate(x) for x in obj ])
