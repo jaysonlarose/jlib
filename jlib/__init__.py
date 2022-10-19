@@ -1932,7 +1932,7 @@ def proppagate(obj):# {{{
 
 	Returns something like a deepcopy of the supplied object.
 	"""
-	import colllections.abc
+	import collections.abc
 	if isinstance(obj, dict):
 		ret = proppadict()
 		for k, v in obj.items():
