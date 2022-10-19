@@ -1891,7 +1891,28 @@ class easy_opt(object):# {{{
 	def __contains__(s, x):
 		return x in s._opts
 # }}}
-class proppadict(dict):# {{{
+
+ proppadict(dict):# {{{
+	"""
+	A proppadict is a dict whose keys can also be accessed by attributes.
+
+	>>> pd = jlib.proppadict({'dog': 'woof', 'duck': 'quack', 'cat': 'meow', 'cow': 'moo'})
+	>>> pd.dog
+	'woof'
+	>>> pd.sheep = "bleat"
+	>>> pd['donkey'] = "bray"
+	>>> pd.donkey
+	'bray'
+	>>> del pd.donkey
+	>>> 'donkey' in pd
+	False
+
+	Anyone used to Javascript will think of this as normal and natural.
+	Anyone not used to Javascript will likely take up pitchfork and torch.
+
+	I created this class purely because typing `pd.donkey` is quicker and easier
+	than typing `pd['donkey']`, and looks cleaner, to boot.
+	"""
 	def __getattr__(self, attr):
 		if attr in self:
 			return self[attr]
@@ -1904,8 +1925,26 @@ class proppadict(dict):# {{{
 	def copy(self):
 		return proppadict(self.items())
 # }}}
+def proppagate(obj):# {{{
+	"""
+	This will attempt to step into and through the object supplied to it,
+	converting dicts into proppadicts along the way.
 
-class HexDumper:
+	Returns something like a deepcopy of the supplied object.
+	"""
+	if isinstance(obj, dict):
+		ret = proppadict()
+		for k, v in obj.items():
+			ret[k] = proppagate(v)
+	elif type(obj) in [str, int, type(None)]:
+		ret = obj
+	else:
+		ret = type(obj)([ x for x in obj ])
+	return ret
+# }}}
+
+
+class HexDumper:# {{{
 	def __init__(self, width=16):
 		self.width = width
 	@classmethod
@@ -1923,7 +1962,7 @@ class HexDumper:
 			ascstring = ''.join([ chr(x) if x >= 32 and x <= 126 else '.' for x in linedata ])
 			ret.append((" ".join(splitlen_array_remainder(hexstring, 2))).ljust((self.width * 3) - 1) + "  " + ascstring)
 		return "\n".join(ret) + "\n"
-
+# }}}
 
 class GhettoUpdatingLine(object):# {{{
 	__slots__ = ['buf', 'fh', 'mute']
