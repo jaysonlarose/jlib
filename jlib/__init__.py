@@ -18,7 +18,7 @@ if sys.version_info.major >= 3:
 		import importlib.metadata
 		__version__ = importlib.metadata.version("jlib")
 
-image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp'.split())
+image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp .avif'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
 svg_exts = set(['.svg'])
 compressed_exts = set('.gz .z .bz2 .xz'.split())
@@ -1899,6 +1899,19 @@ class proppadict(dict):# {{{
 		return proppadict(self.items())
 # }}}
 
+def proppify(obj):
+	if isinstance(obj, list):
+		ret = list([ proppify(x) for x in obj ])
+	elif isinstance(obj, tuple):
+		ret = tuple([ proppify(x) for x in obj ])
+	elif isinstance(obj, dict):
+		ret = proppadict()
+		for k, v in obj.items():
+			ret[k] = proppify(v)
+	else:
+		ret = obj
+	return ret
+
 class HexDumper:
 	def __init__(self, width=16):
 		self.width = width
@@ -1996,19 +2009,19 @@ atexit.register(TempFilePool.deregister_all)
 
 def ss(buf):# {{{
 	import base64, bz2
-	return base64.encodestring(bz2.compress(buf))
+	return base64.encodebytes(bz2.compress(buf))
 # }}}
 def ssz(buf):# {{{
 	import base64
-	return base64.encodestring(buf.encode("zlib"))
+	return base64.encodebytes(buf.encode("zlib"))
 # }}}
 def rs(buf):# {{{
 	import base64, bz2
-	return bz2.decompress(base64.decodestring(buf))
+	return bz2.decompress(base64.decodebytes(buf))
 # }}}
 def rsz(buf):# {{{
 	import base64
-	return base64.decodestring(buf).decode("zlib")
+	return base64.decodebytes(buf).decode("zlib")
 # }}}
 
 def getstat(src):# {{{
