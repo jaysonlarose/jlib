@@ -13,10 +13,16 @@ from threading import Thread
 if sys.version_info.major >= 3:
 	if sys.version_info.minor < 8:
 		import importlib_metadata
-		__version__ = importlib_metadata.version("jlib")
+		try:
+			__version__ = importlib_metadata.version("jlib")
+		except importlib_metadata.PackageNotFoundError:
+			__version__ = "?"
 	else:
 		import importlib.metadata
-		__version__ = importlib.metadata.version("jlib")
+		try:
+			__version__ = importlib.metadata.version("jlib")
+		except importlib.metadata.PackageNotFoundError:
+			__version__ = "?"
 
 image_exts = set('.bmp .cur .dcx .eps .fli .fpx .gbr .gif .icns .ico .im .imt .iptc .jpe .jpeg .jpg .jp2 .mpo .msp .pbm .pcd .pcx .png .ppm .psd .svg .tga .tif .tiff .wal .xbm .xpm .vtx .webp .avif'.split())
 video_exts = set('.wmv .mpeg .mpg .asf .rm .rmvb .ram .flv .mov .mkv .m4v .webm .3g .3gpp .3gp .mp4 .avi .divx .vob .ogv .ts .m1v .mts'.split())
@@ -1885,7 +1891,28 @@ class easy_opt(object):# {{{
 	def __contains__(s, x):
 		return x in s._opts
 # }}}
+
 class proppadict(dict):# {{{
+	"""
+	A proppadict is a dict whose keys can also be accessed by attributes.
+
+	>>> pd = jlib.proppadict({'dog': 'woof', 'duck': 'quack', 'cat': 'meow', 'cow': 'moo'})
+	>>> pd.dog
+	'woof'
+	>>> pd.sheep = "bleat"
+	>>> pd['donkey'] = "bray"
+	>>> pd.donkey
+	'bray'
+	>>> del pd.donkey
+	>>> 'donkey' in pd
+	False
+
+	Anyone used to Javascript will think of this as normal and natural.
+	Anyone not used to Javascript will likely take up pitchfork and torch.
+
+	I created this class purely because typing `pd.donkey` is quicker and easier
+	than typing `pd['donkey']`, and looks cleaner, to boot.
+	"""
 	def __getattr__(self, attr):
 		if attr in self:
 			return self[attr]
@@ -1899,7 +1926,7 @@ class proppadict(dict):# {{{
 		return proppadict(self.items())
 # }}}
 
-def proppify(obj):
+def proppify(obj):# {{{
 	if isinstance(obj, list):
 		ret = list([ proppify(x) for x in obj ])
 	elif isinstance(obj, tuple):
@@ -1911,8 +1938,30 @@ def proppify(obj):
 	else:
 		ret = obj
 	return ret
+#}}}
 
-class HexDumper:
+def proppagate(obj):# {{{
+	"""
+	This will attempt to step into and through the object supplied to it,
+	converting dicts into proppadicts along the way.
+
+	Returns something like a deepcopy of the supplied object.
+	"""
+	import collections.abc
+	if isinstance(obj, dict):
+		ret = proppadict()
+		for k, v in obj.items():
+			ret[k] = proppagate(v)
+	elif type(obj) in [str]:
+		ret = obj
+	elif not isinstance(obj, collections.abc.Iterable):
+		ret = obj
+	else:
+		ret = type(obj)([ proppagate(x) for x in obj ])
+	return ret
+# }}}
+
+class HexDumper:# {{{
 	def __init__(self, width=16):
 		self.width = width
 	@classmethod
@@ -1930,7 +1979,7 @@ class HexDumper:
 			ascstring = ''.join([ chr(x) if x >= 32 and x <= 126 else '.' for x in linedata ])
 			ret.append((" ".join(splitlen_array_remainder(hexstring, 2))).ljust((self.width * 3) - 1) + "  " + ascstring)
 		return "\n".join(ret) + "\n"
-
+# }}}
 
 class GhettoUpdatingLine(object):# {{{
 	__slots__ = ['buf', 'fh', 'mute']
