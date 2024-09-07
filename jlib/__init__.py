@@ -2133,6 +2133,68 @@ def make_headers_dict(text):# {{{
 	return headers
 # }}}
 
+def tmux_multi_command_runner(commands):# {{{
+	"""
+	Given a list of shell stuff to run
+	(list of lists),
+	starts each up in its own pane of a
+	tmux session, along with a little
+	extra stuff to capture and report back
+	the command's exit code.
+
+	Returns a list of ints representing
+	the resultant exit codes.
+	"""
+
+	import tempfile
+	import os
+	import select
+	import shlex
+	import subprocess
+	import re
+	import functools
+
+	pat_fifoline = re.compile("^SESSION (?P<session>\d+) RETCODE (?P<retcode>\d+)$")
+	fifo_name = tempfile.mktemp(dir=runtime_dir(), prefix="fifo__")
+	os.mkfifo(fifo_name)
+	tmux_procargs = []
+
+	for i, procargs in enumerate(commands):
+		if i == 0:
+			tmux_procargs.extend(['tmux', 'new-session'])
+		else:
+			tmux_procargs.extend([';', 'split-window'])
+		proctext = f"SESSION={i} ; RETFIFO=\"{fifo_name}\" ; "
+		proctext += shlex.join(procargs)
+		proctext += " ; RETCODE=$? ; echo SESSION $SESSION RETCODE $RETCODE > \"$RETFIFO\""
+		tmux_procargs.append(proctext)
+
+	proc = subprocess.Popen(tmux_procargs)
+
+	fd = os.open(fifo_name, os.O_RDWR | os.O_NONBLOCK)
+	fh = os.fdopen(fd, "rb")
+
+	retcodes = [ None for x in commands ]
+	while True:
+		ifs, ofs, xfs = select.select([fh], [], [], 1)
+		if fh in ifs:
+			data = fh.read()
+			if len(data) > 0:
+				text = data.decode()
+				mat = pat_fifoline.search(text)
+				if mat:
+					session = int(mat.group("session"))
+					retcode = int(mat.group("retcode"))
+					retcodes[session] = retcode
+		finished = functools.reduce(lambda x, y: x and y, [ x is not None for x in retcodes ])
+		if finished:
+			break
+	fh.close()
+	os.unlink(fifo_name)
+	proc.wait()
+	
+	return retcodes
+# }}}
 ########################
 #
 # Custom class - Base26
