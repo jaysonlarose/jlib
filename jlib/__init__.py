@@ -2133,7 +2133,7 @@ def make_headers_dict(text):# {{{
 	return headers
 # }}}
 
-def tmux_multi_command_runner(commands):# {{{
+def tmux_multi_command_runner(commands, remain_on_exit=False):# {{{
 	"""
 	Given a list of shell stuff to run
 	(list of lists),
@@ -2168,6 +2168,8 @@ def tmux_multi_command_runner(commands):# {{{
 		proctext += shlex.join(procargs)
 		proctext += " ; RETCODE=$? ; echo SESSION $SESSION RETCODE $RETCODE > \"$RETFIFO\""
 		tmux_procargs.append(proctext)
+	if remain_on_exit:
+		tmux_procargs.extend([';', 'set-option', '-w', 'remain-on-exit', 'on'])
 
 	proc = subprocess.Popen(tmux_procargs)
 
