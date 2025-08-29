@@ -587,6 +587,11 @@ def timedelta_to_DHMS(dur, weeks=True, precision=0): # {{{
 
 	>>> print(jlib.timedelta_to_DHMS(datetime.timedelta(days=5, hours=2, minutes=25, microseconds=123), precision=4))
 	5d 02h 25m 00.0001s
+
+
+	The `weeks` parameter controls whether or not time quantities larger than
+	7 days will roll over to a "weeks" specifier, or if the value should just
+	be kept to a larger number of days.
 	"""
 	# }}}
 	ts = abs(dur.total_seconds())
@@ -626,8 +631,24 @@ def timedelta_to_DHMS(dur, weeks=True, precision=0): # {{{
 	strout += 's'
 	return strout
 # }}}
-def DHMS_to_timedelta(dhms):# {{{
-	# Lifted and adapted from https://gist.github.com/Ayehavgunne/ac6108fa8740c325892b
+def DHMS_to_timedelta(dhms, return_kwargs=False):# {{{
+	"""
+	Lifted and adapted from https://gist.github.com/Ayehavgunne/ac6108fa8740c325892b
+
+	Converts a string like 4d2h20m into a timedelta
+	  representing 4 days 2 hours 20 minutes.
+
+	Input can be an arbitrary quantity of <number><character> pairs.
+	4h30m30m is the same as 4h60m is the same as 5h.
+
+	If the `return_kwargs` parameter is set True, instead of returning a
+	timedelta value, this function will return the dict that it would have
+	passed to timedelta to generate its output, instead. "Why would one want
+	such a thing", you may ask? I'm glad you asked. Maybe the user inputted
+	a large value that you want to feed back into timedelta_to_DHMS, and you
+	only want to have THAT function convert more than 7 days into a week value
+	if the user specified a week quantity to begin with.
+	"""
 	import datetime
 	dhms = dhms.lower()
 	prev_num = []
@@ -652,12 +673,17 @@ def DHMS_to_timedelta(dhms):# {{{
 					key = 'seconds'
 				else:
 					raise ValueError("Unknown DHMS predicate: {}".format(character))
-				timedelta_kwargs[key] = num
+				if key not in timedelta_kwargs:
+					timedelta_kwargs[key] = num
+				else:
+					timedelta_kwargs[key] += num
 				prev_num = []
 		elif character.isnumeric() or character == '.':
 			prev_num.append(character)
 	if prev_num:
 		raise ValueError("Dangling quantity: {}".format(''.join(prev_num)))
+	if return_kwargs:
+		return timedelta_kwargs
 	return datetime.timedelta(**timedelta_kwargs)
 # }}}
 def format_timestamp(dt, omit_tz=False, alt_tz=False, precision=6):# {{{
@@ -2154,7 +2180,7 @@ def tmux_multi_command_runner(commands, remain_on_exit=False):# {{{
 	import re
 	import functools
 
-	pat_fifoline = re.compile("^SESSION (?P<session>\d+) RETCODE (?P<retcode>\d+)$")
+	pat_fifoline = re.compile(r"^SESSION (?P<session>\d+) RETCODE (?P<retcode>\d+)$")
 	fifo_name = tempfile.mktemp(dir=runtime_dir(), prefix="fifo__")
 	os.mkfifo(fifo_name)
 	tmux_procargs = []
