@@ -1,14 +1,17 @@
 # Classes and routines for making stuff look sweet.
 
 
-def termformat_pygmentize(code, lexername, stylename="fruity"):
-	import pygments, pygments.lexers, pygments.formatters, pygments.util, pygments.styles
-	lexer = pygments.lexers.get_lexer_by_name(lexername)
-	#formatter = pygments.formatters.terminal.TerminalFormatter()
-	#stylee = pygments.styles.get_style_by_name(stylename)
-	formatter = pygments.formatters.get_formatter_by_name("terminal16m").__class__(style=pygments.styles.get_style_by_name(stylename))
-	#formatter.encoding = pygments.util.terminal_encoding(sys.stdout)
-	return pygments.highlight(code, lexer, formatter)
+def termformat_pygmentize(code, lexername, stylename="fruity", force=False):
+	import pygments, pygments.lexers, pygments.formatters, pygments.util, pygments.styles, sys
+	if sys.stdout.isatty() or force:
+		lexer = pygments.lexers.get_lexer_by_name(lexername)
+		#formatter = pygments.formatters.terminal.TerminalFormatter()
+		#stylee = pygments.styles.get_style_by_name(stylename)
+		formatter = pygments.formatters.get_formatter_by_name("terminal16m").__class__(style=pygments.styles.get_style_by_name(stylename))
+		#formatter.encoding = pygments.util.terminal_encoding(sys.stdout)
+		return pygments.highlight(code, lexer, formatter)
+	else:
+		return code
 
 
 
