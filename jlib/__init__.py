@@ -1755,9 +1755,19 @@ def runtime_dir():# {{{
 
 	On Linux systems, this function returns the value of
 	os.environ['XDG_RUNTIME_DIR'], if it's present. Otherwise, it falls back
-	to os.environ['TMPDIR'].
+	to os.environ['TMPDIR']. If that's not present, the following song-and-dance
+	will be attempted:
 
-	If the requisite environment variables are not defined, this function will
+	Does /run/user exist and is a directory?
+	  If so,
+	    Does /run/user/<os.getuid()> exist and is a directory?
+		  If not,
+		    Set umask to 0o77,
+		    Try creating it,
+			Restore umask
+		  If so, return it.
+
+	If none of the above are satisfied, this function will
 	return "/tmp". If /tmp doesn't exist, it will raise RuntimeError.
 	"""
 
@@ -1766,6 +1776,16 @@ def runtime_dir():# {{{
 	if sys.platform in ['linux', 'linux2']:
 		if "XDG_RUNTIME_DIR" in os.environ:
 			environ_variable = "XDG_RUNTIME_DIR"
+		elif os.path.isdir("/run/user"):
+			if os.path.isdir(f"/run/user/{os.getuid()}"):
+				old_umask = os.umask(0o77)
+				try:
+					os.mkdir(f"/run/user/{os.getuid()}")
+				except Exception:
+					pass
+				finally: os.umask(old_umask)
+			if os.access(f"/run/user/{os.getuid()}", os.W_OK):
+				return f"/run/user/{os.getuid()}"
 	
 	if environ_variable not in os.environ:
 		if os.access("/tmp", os.W_OK):
