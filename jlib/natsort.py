@@ -4,10 +4,12 @@
 
 The function `natural_key` was NOT written by Jayson Larose.
 
-He found it here:
+They found it here:
 
 https://stackoverflow.com/questions/34518/natural-sorting-algorithm/6924517
 """
+
+# TODO: add unicodedata.normalize("NKFD", <str>)?
 
 from __future__ import print_function
 import re, sys
@@ -24,6 +26,34 @@ case = natural_key
 nocase = natural_key_lower
 natcmp = natural_key
 natcasecmp = natural_key_lower
+
+def cmp_natural(a, b):
+	"""
+	Perform "natural" sorting, the old "cmp" way.
+	Suitable for feeding to something like sqlite3.Connection.create_collation().
+	"""
+	sa = natural_key(a)
+	sb = natural_key(b)
+	if sa == sb:
+		return 0
+	elif sa <sb:
+		return -1
+	else:
+		return 1
+
+def cmp_natural_nocase(a, b):
+	"""
+	Perform case-insensitive "natural" sorting, the old "cmp" way.
+	Suitable for feeding to something like sqlite3.Connection.create_collation().
+	"""
+	sa = natural_key_lower(a)
+	sb = natural_key_lower(b)
+	if sa == sb:
+		return 0
+	elif sa <sb:
+		return -1
+	else:
+		return 1
 
 def natsort(seq, cmp=natcmp, key=None):
 	if key is not None:
